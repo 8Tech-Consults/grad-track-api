@@ -97,6 +97,7 @@ class Account extends Model
             Account::doTransfer($m);
         });
         self::updating(function ($m) {
+            return false;
             if (isset($m->new_balance)) {
                 if ($m->new_balance == 1) {
                     if (isset($m->new_balance_amount)) {
@@ -154,6 +155,7 @@ class Account extends Model
             //new_balance
         });
         self::creating(function ($m) {
+            return false;
             $u = Administrator::find($m->administrator_id);
             if ($u == null) {
                 return false;
@@ -188,6 +190,7 @@ class Account extends Model
 
     public static function create($administrator_id)
     {
+        return;
         $admin = Administrator::where([
             'id' => $administrator_id
         ])->first();

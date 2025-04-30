@@ -51,6 +51,7 @@ class HomeController extends Controller
     {
 
         $u = Admin::user();
+        
 
         //$warnings = Utils::get_system_warnings($u->ent);
 

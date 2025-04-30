@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ApiAuthController;
 use App\Http\Controllers\ApiMainController;
+use App\Http\Controllers\DynamicCrudController;
+use App\Http\Controllers\DynamicListController;
 use App\Http\Controllers\QuickSearchController;
 use App\Http\Middleware\JwtMiddleware;
 use App\Models\AcademicClass;
@@ -28,6 +30,13 @@ Route::get("user-manifest", [ApiMainController::class, 'manifest']);
 
 
 Route::middleware([JwtMiddleware::class])->group(function () {
+
+    Route::get('/dynamic-save', [DynamicCrudController::class, 'index']);
+    Route::post('/dynamic-save', [DynamicCrudController::class, 'save']);
+    Route::post('/dynamic-delete', [DynamicCrudController::class, 'delete']);
+
+
+
     Route::post("subject-create", [ApiMainController::class, 'subject_create']);
     Route::post("employee-create", [ApiMainController::class, 'employee_create']);
     Route::post("student-create", [ApiMainController::class, 'student_create']);

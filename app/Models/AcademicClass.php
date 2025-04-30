@@ -27,262 +27,12 @@ class AcademicClass extends Model
     public static function boot()
     {
         parent::boot();
-        self::deleting(function ($m) {
-        });
-
-
-        self::created(function ($m) {
-            if ($m->class_type == 'Secondary') {
-                try {
-                    AcademicClass::generate_secondary_main_subjects($m);
-                } catch (\Throwable $th) {
-                }
-            }
-
-            AcademicClass::generate_subjects($m);
-        });
-        self::deleting(function ($m) {
-            die("You cannot delete this item.");
-        });
-        self::creating(function ($m) {
-            return AcademicClass::my_update($m);
-        });
-        self::updating(function ($m) {
-
-
-
-            return AcademicClass::my_update($m);
-        });
+        self::deleting(function ($m) {});
+  
     }
 
 
-    public static function generate_secondary_main_subjects($m)
-    {
-        if ($m->class_type != 'Secondary') {
-            return;
-        }
-
-        foreach (ParentCourse::where([
-            'type' => 'Secondary',
-            'is_compulsory' => 1,
-        ])->get() as $pc) {
-
-            $ent = Enterprise::find($m->enterprise_id);
-            if ($ent == null) {
-                throw new Exception("Enterprise not found.", 1);
-            }
-            $sub = new SecondarySubject();
-            $sub->enterprise_id = $m->enterprise_id;
-            $sub->academic_class_id = $m->id;
-            $sub->parent_course_id = $pc->id;
-            $sub->academic_year_id = $m->academic_year_id;
-            $sub->teacher_1 = $ent->administrator_id;
-            $sub->subject_name = $pc->name;
-            $sub->code = $pc->code;
-            $sub->is_optional = 0;
-            $sub->details = '';
-            $sub->save();
-        }
-    }
-
-
-    public static function updateSecondaryCompetences($class)
-    {
-        if ($class == null) {
-            return;
-        }
-        if ($class->class_type != 'Secondary') {
-            return;
-        }
-
-        if ($class->activities == null) {
-            return;
-        }
-
-        foreach ($class->activities as $key => $act) {
-            try {
-                Activity::generateSecondaryCompetences($act);
-            } catch (\Throwable $th) {
-                //throw $th;
-            }
-        }
-    }
-
-    public function activities()
-    {
-        return $this->hasMany(Activity::class);
-    }
-
-    public function secondarySubjects()
-    {
-        return $this->hasMany(SecondarySubject::class);
-    }
-
-
-
-    /*  
-    									
-
-
-    
-    */
-    /*  PARENT
-     "id" => 1
-    "created_at" => "2023-02-20 20:19:10"
-    "updated_at" => "2023-03-03 20:48:03"
-    "name" => "English"
-    "short_name" => "ENG"
-    "code" => "112"
-    "type" => "Secondary"
-    "is_verified" => 1
-    "is_compulsory" => 1
-    "s1_term1_topics" => "Personal life and family,Finding information,Food"
-    "s1_term2_topics" => "At the market,Children at Work,Environment and Pollution"
-    "s1_term3_topics" => "Urban and rural life,Travel,Experience of secondary school"
-    "s2_term1_topics" => "Modern Communication Technology,Celebrations,Parents and Children"
-    "s2_term2_topics" => "Anti-corruption,Human rights, gender and responsibilities,Tourism, Maps and Giving Directions"
-    "s2_term3_topics" => "Tourism (continued),Leisure,Appearance and grooming"
-    "s3_term1_topics" => "Childhood memories,School clubs,Integrity"
-    "s3_term2_topics" => "Identity crisis,Relationships and emotions,Patriotism"
-    "s3_term3_topics" => "Patriotism (continued),Further Education,Banking and money 2"
-    "s4_term1_topics" => "Leadership,The media,Culture"
-    "s4_term2_topics" => "Culture (continued),Choosing a career,Applying for a job"
-    "s4_term3_topics" => "Globalization"
-    
-    */
-
-    /* CLASS
-    "id" => 1
-    "created_at" => "2022-09-17 06:33:43"
-    "updated_at" => "2022-09-17 06:33:43"
-    "enterprise_id" => 8
-    "academic_year_id" => 1
-    "class_teahcer_id" => 2207
-    "name" => "P.1 - Muhindo Mubaraka"
-    "short_name" => "P.1"
-    "details" => "P.1 - Muhindo Mubaraka"
-    "demo_id" => 0
-    "compulsory_subjects" => 0
-    "optional_subjects" => 0
-    "" => ""
-    "academic_class_level_id" => 0
-    */
-    public static function generate_subjects($m)
-    {
-
-        $category = $m->class_type;
-        $courses = MainCourse::where([
-            'subject_type' => $category
-        ])->get();
-
-        $ent = Enterprise::find($m->enterprise_id);
-        $ay = $ent->active_academic_year();
-        if ($ay == null) {
-            $ay = AcademicYear::where([
-                'enterprise_id' => $m->enterprise_id
-            ])->first();
-        }
-        if ($ay == null) {
-            return $ay;
-        }
-
-        foreach ($courses as $main_course) {
-            if (
-                $category == 'Secondary' ||
-                $category == 'Advanced'
-            ) {
-
-
-                foreach (ParentCourse::where([
-                    'type' => 'Secondary',
-                    'is_compulsory' => 1,
-                ])->get() as $pc) {
-                    foreach ($pc->papers as $paper) {
-                        $sub = Subject::where([
-                            'academic_class_id' => $m->id,
-                            'course_id' => $paper->id,
-                        ])->first();
-                        if ($sub != null) {
-                            continue;
-                        }
-                        $sub = new Subject();
-                        $sub->academic_class_id = $m->id;
-                        $sub->enterprise_id = $m->enterprise_id;
-                        $sub->course_id = $paper->id;
-                        $sub->main_course_id = $paper->id;
-                        $sub->subject_teacher = $ent->administrator_id;
-                        $sub->academic_year_id = $ay->id;
-                        $sub->code = $paper->code;
-                        $sub->details = $paper->name;
-                        $sub->subject_name = $paper->name;
-                        $sub->is_optional = (!$pc->is_compulsory);
-                        $sub->save();
-                    }
-                }
-            } else {
-                $s = Subject::where([
-                    'academic_class_id' => $m->id,
-                    'course_id' => $main_course->id
-                ])->first();
-                if ($s != null) {
-                    continue;
-                }
-                $s = new Subject();
-                $s->enterprise_id = $m->enterprise_id;
-                $s->academic_class_id = $m->id;
-                $s->subject_teacher = $m->class_teahcer_id;
-                $s->code =  $main_course->code;
-                $s->course_id =  $main_course->id;
-                $s->subject_name =  $main_course->name;
-                $s->demo_id =  0;
-                $s->details =  '';
-                $s->is_optional =  false;
-                $s->save();
-            }
-        }
-    }
-    public static function my_update($class)
-    {
-        $_class = AcademicClass::where([
-            'enterprise_id' => $class->enterprise_id,
-            'academic_year_id' => $class->academic_year_id,
-            'academic_class_level_id' => $class->academic_class_level_id,
-        ])->first();
-
-        if ($_class != null) {
-            if ($_class->id != $class->id) {
-                throw new Exception("A school cannot have same class level twice in same academic year.", 1);
-            }
-        }
-
-
-        /* 
- 
-
-    "name" => "P.1 - Muhindo Mubaraka"
-    "short_name" => "P.1"
-    "details" => "P.1 - Muhindo Mubaraka"
-    "demo_id" => 0
-    "compulsory_subjects" => 0
-    "optional_subjects" => 0
-    "class_type" => "Secondary"
-    "academic_class_level_id" => 4
-        
-        */
-
-        $level = AcademicClassLevel::find($class->academic_class_level_id);
-        if ($level == null) {
-            throw new Exception("Academic class level not found.", 1);
-        }
- 
-        if($class->name == null || strlen($class->name)<3){
-            $class->name = $level->name;
-            $class->short_name = $level->short_name;
-        }
-
-        $class->class_type = $level->category;
-        return $class;
-    }
+  
     /* 
     "created_at" => "2022-09-17 06:33:43"
     "updated_at" => "2022-09-17 06:33:43"
@@ -356,9 +106,11 @@ class AcademicClass extends Model
         }
 
         //billing for secular class
-        foreach (StudentHasClass::where([
-            'administrator_id' => $m->id,
-        ])->get() as $key => $val) {
+        foreach (
+            StudentHasClass::where([
+                'administrator_id' => $m->id,
+            ])->get() as $key => $val
+        ) {
             if ($val != null) {
                 if ($val->class != null) {
                     if ($val->class->academic_class_fees != null) {
@@ -399,9 +151,11 @@ class AcademicClass extends Model
 
 
         //bulling theology classes
-        foreach (StudentHasTheologyClass::where([
-            'administrator_id' => $m->id,
-        ])->get() as $key => $val) {
+        foreach (
+            StudentHasTheologyClass::where([
+                'administrator_id' => $m->id,
+            ])->get() as $key => $val
+        ) {
             if ($val != null) {
                 if ($val->class != null) {
                     if ($val->class->academic_class_fees != null) {
@@ -619,10 +373,7 @@ class AcademicClass extends Model
         return $students;
     }
 
-    function getNameTextAttribute()
-    {
-        return $this->short_name . " - " . $this->academic_year->name . "";
-    }
+     
     function getOptionalSubjectsItems()
     {
         $subs = SecondarySubject::where([
@@ -677,7 +428,15 @@ class AcademicClass extends Model
         return $this->hasMany(StudentReportCard::class);
     }
 
+    //class_teahcer_text
+    function getClassTeahcerTextAttribute()
+    {
+        if ($this->class_teacher == null) {
+            return "";
+        }
+        return $this->class_teacher->name;
+    }
 
 
-    protected  $appends = ['name_text'];
+    protected  $appends = [ 'class_teahcer_text'];
 }

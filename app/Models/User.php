@@ -12,7 +12,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-
+use Illuminate\Support\Facades\DB;
 
 class User extends Administrator implements JWTSubject
 {
@@ -27,59 +27,114 @@ class User extends Administrator implements JWTSubject
         parent::boot();
         //deleting
         self::deleting(function ($m) {
+            throw new \Exception("You cannot delete this user. Please contact the system administrator.", 1);
             return false;
         });
 
+        self::creating(function ($m) {
+            $user_with_same_email = User::where([
+                'email' => $m->email,
+            ])->first();
 
+            if ($user_with_same_email != null) {
+                throw new \Exception("User with same email (" . $m->email . ") already exists", 1);
+            }
+            $user_with_same_username = User::where([
+                'username' => $m->email,
+            ])->first();
+            if ($user_with_same_username != null) {
+                throw new \Exception("User with same username (" . $m->email . ") already exists", 1);
+            }
+
+            $m->username = $m->email;
+
+            $m = self::do_prepare($m);
+
+            return $m;
+        });
         //updating
         self::updating(function ($m) {
-            $roles = AdminRoleUser::where([
-                'user_id' => $m->id
-            ]);
-            $m->roles_text = json_encode($roles);
+
+            $user_with_same_email = User::where([
+                'email' => $m->email,
+            ])->where('id', '!=', $m->id)->first();
+            if ($user_with_same_email != null) {
+                throw new \Exception("User with same email (" . $m->email . ") already exists", 1);
+            }
+            $user_with_same_username = User::where([
+                'username' => $m->email,
+            ])->where('id', '!=', $m->id)->first();
+            if ($user_with_same_username != null) {
+                throw new \Exception("User with same username (" . $m->email . ") already exists", 1);
+            }
+            $m->username = $m->email;
+
+            $m = self::do_prepare($m);
             return $m;
         });
 
         //updated
         self::updated(function ($m) {
-
-
-            //check if has parent
-            if (strtolower($m->user_type) == 'student') {
-              
-                $p = $m->getParent();
-                if ($p == null) {
-                    try {
-                        $p = User::createParent($m);
-                    } catch (\Throwable $th) {
-                        //throw $th;
-                    }
-                }
-            }
-
-            $m->update_theo_classes();
+            self::do_finalize($m);
         });
 
         //created
         self::created(function ($m) {
-
-
-            //check if has parent
-            if (strtolower($m->user_type) == 'student') {
-                if ($m->status == 1) {
-                    $m->update_fees();
-                    $m->update_theo_classes();
-                }
-                $p = $m->getParent();
-                if ($p == null) {
-                    try {
-                        $p = User::createParent($m);
-                    } catch (\Throwable $th) {
-                        //throw $th;
-                    }
-                }
-            }
+            self::do_finalize($m);
         });
+    }
+
+
+    public static function do_finalize($m)
+    {
+        //create_roles
+        self::create_roles($m->id, $m->roles_text);
+        //update roles
+        $roles = AdminRoleUser::where([
+            'user_id' => $m->id
+        ])->get();
+        $roles = AdminRoleUser::where([
+            'user_id' => $m->id
+        ])->get()->pluck('role_id')->toArray();
+        //covert them to strings
+        $roles = array_map('strval', $roles);
+        //convert to json
+        $roles_text = json_encode($roles);
+        $sql = "UPDATE admin_users SET roles_text = '" . $roles_text . "' WHERE id = " . $m->id;
+        DB::update($sql);
+    }
+    public static function do_prepare($m)
+    {
+        $user_with_same_email = User::where([
+            'email' => $m->email,
+        ])->where('id', '!=', $m->id)->first();
+        if ($user_with_same_email != null) {
+            throw new \Exception("User with same email (" . $m->email . ") already exists", 1);
+        }
+        $user_with_same_username = User::where([
+            'username' => $m->email,
+        ])->where('id', '!=', $m->id)->first();
+        if ($user_with_same_username != null) {
+            throw new \Exception("User with same username (" . $m->email . ") already exists", 1);
+        }
+
+        if (
+            $m->password == null ||
+            strlen($m->password) < 4
+        ) {
+            $m->password = password_hash('4321', PASSWORD_DEFAULT);
+        }
+
+        if (
+            $m->password == null ||
+            strlen($m->password) < 4
+        ) {
+            $m->password = password_hash('4321', PASSWORD_DEFAULT);
+        }
+
+        $m->name = $m->first_name . ' ' . $m->last_name;
+
+        return $m;
     }
 
 
@@ -254,17 +309,7 @@ class User extends Administrator implements JWTSubject
                 'phone_number_1' => $phone_number_1,
             ])->first();
         }
-        if (
-            $p == null &&
-            $s->school_pay_account_id != null &&
-            strlen($s->school_pay_account_id) > 4
-        ) {
-            $p = User::where([
-                'user_type' => 'parent',
-                'enterprise_id' => $s->enterprise_id,
-                'school_pay_account_id' => $s->school_pay_account_id,
-            ])->first();
-        }
+
 
         if (
             $p == null &&
@@ -292,14 +337,6 @@ class User extends Administrator implements JWTSubject
     }
 
 
-
-    /* 
-        "user_id" => "3839865"
-
-
-        "school_pay_account_id" => "3839865"
-    "school_pay_payment_code" => "1003839865"
-    */
     public function report_cards()
     {
         return $this->hasMany(StudentReportCard::class, 'student_id');
@@ -389,97 +426,8 @@ class User extends Administrator implements JWTSubject
         return $my_subjects;
     }
 
-    public function update_fees()
-    {
+    public function update_fees() {}
 
-        if ($this->status != 1) {
-            return;
-        }
-
-        //if not student, return
-        if ($this->user_type != 'student') {
-            return;
-        }
-
-        $class = AcademicClass::find($this->current_class_id);
-        if ($class == null) {
-            return;
-        }
-        $ent = Enterprise::find($this->enterprise_id);
-        $active_term = $ent->active_term();
-        if ($active_term == null) {
-            return;
-        }
-        $fees = AcademicClassFee::where([
-            'academic_class_id' => $class->id,
-            'enterprise_id' => $this->enterprise_id,
-            'due_term_id' => $active_term->id,
-        ])->get();
-
-        $account = $this->account;
-        if ($this->account == null) {
-            $account = new Account();
-            $account->enterprise_id = $this->enterprise_id;
-            $account->administrator_id = $this->id;
-            $account->name = $this->name;
-            $account->type = 'STUDENT_ACCOUNT';
-            $account->balance = 0;
-            $account->status = 1;
-            $account->description = "Account for {$this->name}";
-            $account->account_parent_id = null;
-            $account->prossessed = 'No';
-            $account->save();
-            $account = Account::find($account->id);
-            $this->account = $account;
-        }
-        $account = Account::find($account->id);
-        if ($account == null) {
-            throw new \Exception("Account not found", 1);
-        }
-
-
-        foreach ($class->academic_class_fees as $fee) {
-            if ($active_term->id != $fee->due_term_id) {
-                continue;
-            }
-
-            $has_fee = StudentHasFee::where([
-                'administrator_id' => $this->id,
-                'academic_class_fee_id' => $fee->id,
-            ])->first();
-            if ($has_fee == null) {
-                $transcation = new Transaction();
-                $transcation->enterprise_id = $this->enterprise_id;
-                $transcation->account_id = $account->id;
-                $transcation->amount = ((-1) * (abs($fee->amount)));
-                $transcation->description = "Debited {$fee->amount} for $fee->name";
-                $transcation->academic_year_id = $active_term->academic_year_id;
-                $transcation->term_id = $active_term->id;
-                $transcation->school_pay_transporter_id = null;
-                $transcation->contra_entry_account_id = null;
-                $transcation->contra_entry_transaction_id = null;
-                $transcation->termly_school_fees_balancing_id = null;
-                $transcation->created_by_id = $ent->administrator_id;
-                $transcation->is_contra_entry = 0;
-                $transcation->payment_date = Carbon::now();
-                $transcation->type = 'FEES_BILLING';
-                $transcation->source = 'STUDENT';
-                $transcation->save();
-
-                $has_fee =  new StudentHasFee();
-                $has_fee->enterprise_id    = $this->enterprise_id;
-                $has_fee->administrator_id    = $this->id;
-                $has_fee->academic_class_fee_id    = $fee->id;
-                $has_fee->academic_class_id    = $class->id;
-                $has_fee->save();
-            }
-        }
-    }
-
-    public function account()
-    {
-        return $this->hasOne(Account::class, 'administrator_id');
-    }
 
     //belings to theology_stream_id
     public function theology_stream()
@@ -566,13 +514,59 @@ class User extends Administrator implements JWTSubject
             throw $th;
         }
     }
-    //getter for roles_text attribute
-    public function getRolesTextAttribute($x)
+
+
+    //create roles for user
+    public static function create_roles($user_id, $roles_text)
     {
-        $role_ids = [];
-        foreach ($this->roles as $role) {
-            $role_ids[] = $role;
+        if ($roles_text == null || strlen($roles_text) < 3) {
+            return;
         }
-        return json_encode($role_ids);
+        $roles = [];
+        try {
+            $roles = json_decode($roles_text);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+        if ($roles == null) {
+            return;
+        }
+        if (count($roles) < 1) {
+            return;
+        }
+        //delete all roles for this user
+        $get_current_roles = AdminRoleUser::where([
+            'user_id' => $user_id
+        ])->get();
+        foreach ($get_current_roles as $role) {
+            //check if role_id is not in new roles
+            if (!in_array($role->role_id, $roles)) {
+                AdminRoleUser::where([
+                    'user_id' => $user_id,
+                    'role_id' => $role->role_id
+                ])->delete();
+            }
+        }
+
+        //now add new roles
+        foreach ($roles as $role) {
+            $r = AdminRoleUser::where([
+                'user_id' => $user_id,
+                'role_id' => $role
+            ])->first();
+            if ($r == null) {
+                //first chekc if role exisits
+                $role_item = AdminRole::where([
+                    'id' => $role
+                ])->first();
+                if ($role_item == null) {
+                    continue;
+                }
+                $r = new AdminRoleUser();
+                $r->user_id = $user_id;
+                $r->role_id = $role;
+                $r->save();
+            }
+        }
     }
 }

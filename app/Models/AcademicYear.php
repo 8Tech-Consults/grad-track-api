@@ -38,7 +38,7 @@ class AcademicYear extends Model
         });
 
         self::created(function ($m) {
-            $terms = [1, 2, 3];
+            $terms = [1, 2];
             foreach ($terms as $t) {
                 $term = new Term();
                 $term->enterprise_id = $m->enterprise_id;
@@ -47,16 +47,15 @@ class AcademicYear extends Model
                 $term->starts = $m->starts;
                 $term->ends = $m->ends;
                 $term->demo_id = 0;
-                $term->details = "Term $t - " . $m->name;
+                $term->details = "Semester $t - " . $m->name;
                 if ($t == 1) {
                     $term->is_active = 1;
                 } else {
                     $term->is_active = 0;
                 }
                 $term->save();
-            } 
+            }
             try {
-                AcademicYear::generate_classes($m);
             } catch (\Throwable $th) {
             }
         });
@@ -160,37 +159,44 @@ class AcademicYear extends Model
     public static function generate_classes($m)
     {
 
+        return;
         $ent = Enterprise::find($m->enterprise_id);
         if ($ent == null) {
             die("Ent not found");
         }
         $classes = [];
 
-        if ($ent->type == 'Primary') { 
-            foreach (AcademicClassLevel::where(
-                'category',
-                'Primary'
-            )->orwhere(
-                'category',
-                'Nursery'
-            )->get() as $level) {
+        if ($ent->type == 'Primary') {
+            foreach (
+                AcademicClassLevel::where(
+                    'category',
+                    'Primary'
+                )->orwhere(
+                    'category',
+                    'Nursery'
+                )->get() as $level
+            ) {
                 $classes[] = $level;
             }
         } else if ($ent->type == 'Secondary') {
-            foreach (AcademicClassLevel::where(
-                'category',
-                'Secondary'
-            )->get() as $level) {
+            foreach (
+                AcademicClassLevel::where(
+                    'category',
+                    'Secondary'
+                )->get() as $level
+            ) {
                 $classes[] = $level;
             }
-        } else if ($ent->type == 'Advanced') { 
-            foreach (AcademicClassLevel::where(
-                'category',
-                'Secondary'
-            )->orwhere(
-                'category',
-                'A-Level'
-            )->get() as $level) {
+        } else if ($ent->type == 'Advanced') {
+            foreach (
+                AcademicClassLevel::where(
+                    'category',
+                    'Secondary'
+                )->orwhere(
+                    'category',
+                    'A-Level'
+                )->get() as $level
+            ) {
                 $classes[] = $level;
             }
         }

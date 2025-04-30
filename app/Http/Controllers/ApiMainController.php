@@ -1144,7 +1144,7 @@ class ApiMainController extends Controller
         }
 
         $current_class = AcademicClass::find($r->current_class_id);
-        if($current_class == null){
+        if ($current_class == null) {
             return $this->error("Class not found.");
         }
 
@@ -1190,7 +1190,7 @@ class ApiMainController extends Controller
             return $this->error('Failed to find employee account.');
         }
 
- 
+
         if (!empty($_FILES)) {
             //logo_path
             if (isset($_FILES['avatar_path'])) {

@@ -167,6 +167,8 @@ Route::get('termly-report', function (Request $r) {
 });
 
 Route::get('/', function (Request $request) {
+   header("Location: ".url('auth/login')); 
+   die('');
   if (isset($_SERVER['HTTP_HOST'])) {
     if (
       $_SERVER['HTTP_HOST'] === 'tusometech.com' ||
