@@ -1,7 +1,6 @@
 .env
 .DS_Store
-.htaccess
-public/storage/
+.htaccess 
 important comands.txt
 important comands.txt
 .htaccess
