@@ -55,7 +55,7 @@ class Utils  extends Model
     public static function company_name()
     {
         $name_1 = 'Eight Tech Consults Limited';
-        $name_2 = 'Newline Technologies';
+        $name_2 = 'Eight Tech Consults Limited';
         $current_url = url()->current();
         //check if the url contains tusometech.com and retuen
         $domain = 'tusometech.com';

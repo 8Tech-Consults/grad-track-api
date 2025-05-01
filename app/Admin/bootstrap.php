@@ -55,7 +55,7 @@ if ($u != null) {
     if ($u->ent != null) {
         if ($u->ent->has_valid_lisence != 'Yes') {
             die("System under maintenance. New features are being added. Please check back later.");
-            die('License for <b>' . $u->ent->name . '</b> has expired. Please contact, <b>Newline Technologies Ltd</b>. for renewal.');
+            die('License for <b>' . $u->ent->name . '</b> has expired. Please contact, <b>Eight Tech Consults Limited</b>. for renewal.');
         }
     }
 }

@@ -153,7 +153,7 @@
         <div class="login-panel">
             <div class="login-card">
                 <h2>Admin Login</h2>
-                <form action="{{ admin_url('auth/login') }}" method="post">
+                <form action="{{ url('auth/login') }}" method="post">
                     <input type="hidden" name="_token" value="{{ csrf_token() }}">
 
                     @if ($errors->any())
