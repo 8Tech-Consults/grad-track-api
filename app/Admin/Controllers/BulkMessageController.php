@@ -137,22 +137,22 @@ class BulkMessageController extends AdminController
         $form->text('message_title', __('Bulk Messaging Title (Purpose)'))
             ->rules('required');
 
+
+        $form->textarea('message_body', __('Compose Message'))->rules('required');
+        $form->html('<p><b>Available Keywords</b></p> 
+        <p class="p-0 m-0">Name: <code>[NAME]</code></p> 
+        ', '');
+
+        $form->hidden('message_delivery_type', __('Message delivery type'))
+            ->default('Send Now');
+
+
         $form->radioCard('target_types', __('Target types'))->options([
             'Individuals' => 'Individuals',
-            'To Classes' => 'By Classes',
-            'To Parents' => 'Specific Students',
-            'To Teachers' => 'To Teachers',
-        ])
-            ->help('By Classes = Parents of Students in selected classes, Specific Students = Parents of selected students')
-            ->rules('required')
-            ->when('Individuals', function ($form) {
-                $form->tags('target_individuals_phone_numbers', __('Target individuals phone numbers'))
-                    ->help('Enter phone numbers separated by comma')
-                    ->rules('required');
-            })
-            ->when('To Parents', function ($form) {
+            'TO_All' => 'All',
+        ])->when('Individuals', function ($form) {
                 $u = Admin::user();
-                $ajax_url = url('/api/ajax-users?enterprise_id=' . $u->enterprise_id . "&user_type=student");
+                $ajax_url = url('/api/ajax-users?enterprise_id=' . $u->enterprise_id . "");
                 $form->multipleSelect('target_parents_condition_phone_numbers', "To Parents of students")
                     ->options(function ($ids) {
                         if (!is_array($ids)) {
@@ -162,93 +162,13 @@ class BulkMessageController extends AdminController
                         return $data;
                     })
                     ->ajax($ajax_url)->rules('required');
-            })->when('To Classes', function ($form) {
-                $ay = AcademicYear::where([
-                    'is_active' => 1,
-                    'enterprise_id' => Admin::user()->enterprise_id,
-                ])->first();
-                $form->multipleSelect('target_classes_ids')->options(
-                    AcademicClass::where([
-                        'enterprise_id' => Admin::user()->enterprise_id,
-                        'academic_year_id' => $ay->id,
-                    ])->pluck('name', 'id')
-                )->rules('required');
-            })->when('in', ['To Parents', 'To Classes'], function ($form) {
-
-                $form->radioCard('target_parents_condition_type', __('Condition'))->options([
-                    'Fees Balance' => 'School Fees Balance Reminder',
-                    'Specific Parents' => 'No Other',
-                ])
-                    ->when('Fees Balance', function ($form) {
-                        $form->radioCard('target_parents_condition_fees_type', __('School Fees Balance - Condition'))->options([
-                            'Equal To' => 'Equal To',
-                            'Less Than' => 'Less Than',
-                        ])->rules('required');
-                        $form->decimal('target_parents_condition_fees_amount', __('School Fees Balance Amount'))
-                            ->rules('required');
-
-                        $form->radioCard('target_parents_condition_fees_status', __('Student\'s Account Verification Status'))->options([
-                            'Only Verified' => 'Only Verified Accounts',
-                            'All' => 'All Accounts'
-                        ])->rules('required');
-                    })
-                    ->rules('required');
-            })->when('To Teachers', function ($form) {
-                $u = Admin::user();
-                $ajax_url = url('/api/ajax-users?enterprise_id=' . $u->enterprise_id . "&user_type=employee");
-                $form->multipleSelect('target_teachers_ids', "Target teachers")
-                    ->options(function ($ids) {
-                        return [];
-                    })
-                    ->ajax($ajax_url)->rules('required');
             });
-
-
-        /* $form->radioCard('message_delivery_type', __('Message delivery'))->options([
-            'Sheduled' => 'Sheduled',
-            'Send Now' => 'Send Now'
-        ])->when('Sheduled', function ($form) {
-            $form->datetime('message_delivery_time', __('Scheduled Message Delivery Time'))->default(date('Y-m-d H:i:s'))->rules('required');
-        })->rules('required'); */
-
-        ///message_delivery_type HIDDEN
-        $form->hidden('message_delivery_type', __('Message delivery type'))
-            ->default('Send Now');
-
-        /*   $form->radioCard('clone_action', __('Duplicate this messaging'))->options([
-            'Duplicate' => 'Duplicate',
-            'Dont Duplicate' => 'Don\'t Duplicate',
-        ])->when('Duplicate', function ($form) {
-            $form->radioCard('clone_confirm', __('Are you sure you want to send these messages now?'))->options([
-                'Yes' => 'Yes',
-                'No' => 'No',
-            ])->rules('required');
-        })->rules('required'); */
-
-        /*    $form->radioCard('do_process_messages', __('Process Messages'))->options([
-            'Yes' => 'Yes',
-            'No' => 'No',
-        ])->rules('required'); */
-        //HIdden do_process_messages
-        $form->hidden('do_process_messages', __('Process Messages'))
-            ->default('Yes');
-
-
+      
         $form->radioCard('send_action', __('Sending Action'))->options([
             'Send' => 'Send Now',
             'Draft' => 'Save as Draft'
         ]);
 
-
-
-        $form->textarea('message_body', __('Compose Message'))->rules('required')
-            ->default('Dear Parent, you are reminded to clear the outstanding balance of UGX [FEES_BALANCE] for your child [STUDENT_NAME]. BFSS Adminstration.');
-        $form->html('<p><b>Available Keywords</b></p>
-        <p class="p-0 m-0">Student\'s Name: <code>[STUDENT_NAME]</code></p>
-        <p class="p-0 m-0">Parent\'s Name: <code>[PARENT_NAME]</code></p>
-        <p class="p-0 m-0">Teacher\'s Name: <code>[TEACHER_NAME]</code></p>
-        <p class="p-0 m-0">School fees balance: <code>[FEES_BALANCE]</code></p>
-        ', '');
 
         return $form;
     }

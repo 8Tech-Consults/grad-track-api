@@ -50,7 +50,7 @@ class AccountParent extends Model
         return $this->hasMany(Account::class);
     }
 
-    public function getBudget($term)
+    public function getBudget($term = null)
     {
         return FinancialRecord::where([
             'parent_account_id' => $this->id,
@@ -58,12 +58,28 @@ class AccountParent extends Model
         ])->sum('amount');
     }
 
-    public function getExpenditure($term)
+    public function getExpenditure($term = null)
     {
         return FinancialRecord::where([
             'parent_account_id' => $this->id,
             'type' => 'EXPENDITURE',
         ])->sum('amount');
+    }
+
+    //get balance
+    public function getBalance($year = null)
+    {
+        $exp = FinancialRecord::where([
+            'parent_account_id' => $this->id,
+            'type' => 'EXPENDITURE',
+        ])->sum('amount');
+        $bud = FinancialRecord::where([
+            'parent_account_id' => $this->id,
+            'type' => 'BUDGET',
+        ])->sum('amount');
+        $tot = $bud + $exp;
+
+        return $tot;
     }
 
     public function getSum($year)
@@ -89,15 +105,27 @@ class AccountParent extends Model
 
         return $tot;
     }
-    /* 
-"balance" => 0
-"status" => 0
-"category" => null
-"description" => null
-"account_parent_id" => null
-"transfer_keyword" => null
-"want_to_transfer" => null
-"academic_class_id" => null
-"prossessed" => "No"
-*/
+
+    //belongs to company
+    public function company()
+    {
+        return $this->belongsTo(Enterprise::class, 'enterprise_id');
+    }
+
+    //belongs to client (user)
+    public function client()
+    {
+        return $this->belongsTo(Client::class, 'client_id');
+    }
+    //BELONGS TO manager (user)
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'administrator_id');
+    }
+
+    //project_sections AS ACTIVITIES
+    public function project_sections()
+    {
+        return $this->hasMany(Account::class, 'account_parent_id');
+    }
 }

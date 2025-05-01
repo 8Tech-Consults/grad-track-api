@@ -35,6 +35,7 @@ class AccountController extends AdminController
     {
 
 
+        
         $grid = new Grid(new Account());
         $grid->disableBatchActions();
 
@@ -226,49 +227,9 @@ class AccountController extends AdminController
             )
             ->default($account_parent_id)
             ->rules('required');
-        if ($form->isEditing()) {
-            $form->radio('status', "Account verification")
-                ->options([
-                    0 => 'Not verified',
-                    1 => 'Account verified',
-                ])->rules('required');
-        }
-
-        if ($form->isEditing()) {
-            $form->radio('new_balance', "Change balance")
-                ->options([
-                    0 => 'Don\'t change account balance',
-                    1 => 'Change account balance',
-                ])
-                ->when(1, function ($f) {
-                    $f->text('new_balance_amount', __('New Account Amount'))
-                        ->rules('int')->attribute('type', 'number')
-                        ->rules('required');
-                })
-                ->default(0)
-                ->rules('required');
-        }
-
-        /*      if ($form->isEditing()) {
-            $form->radio('category', "Account type")
-                ->options(Utils::account_categories())
-                ->readonly()
-                ->rules('required');
-        } else {
-            $form->hidden('type', "Account type")
-                ->default('OTHER_ACCOUNT')
-                ->rules('required');
-
-            $form->radio('category', "Account type")
-                ->options(Utils::account_categories())
-                ->readonly()
-                ->rules('required');
-        }
- */
-
-
-
-        $form->textarea('description', __('Account description'));
+      
+        
+        $form->textarea('description', __('Activity description'));
 
 
         /*
@@ -292,9 +253,27 @@ class AccountController extends AdminController
             });*/
 
 
-
+        $form->file('completion_report_pdf', __('Activity Completion Report'))
+            ->rules('mimes:pdf|max:2048')
+            ->help('Upload a PDF file of the completion report');
 
         $form->disableViewCheck();
+
+        $form->radio('status', "Activity status")
+            ->options([
+                'ACTIVE' => 'Ongoing',
+                'COMPLETED' => 'Completed',
+                'CANCELLED' => 'Cancelled',
+            ]) 
+        ->when('ACTIVE', function ($f) { 
+            $f->text('progress', __('Activity Progress (%)'))
+            ->rules('required')
+            ->default(0);
+        })->when('COMPLETED', function ($f) { 
+            $f->file('completion_report_pdf', __('Attach Activity Completion Report'));
+        })->default('ACTIVE')
+            ->rules('required'); 
+ 
 
         return $form;
     }

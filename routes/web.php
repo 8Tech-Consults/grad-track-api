@@ -8,6 +8,7 @@ use App\Http\Controllers\ReportCardsPrintingController;
 use App\Models\AcademicClass;
 use App\Models\AcademicClassFee;
 use App\Models\Account;
+use App\Models\AccountParent;
 use App\Models\BatchServiceSubscription;
 use App\Models\Book;
 use App\Models\BooksCategory;
@@ -61,7 +62,23 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 
+Route::get('project-report', function () {
 
+  $id = $_GET['id'];
+  $project = AccountParent::find($id);
+
+  $pdf = App::make('dompdf.wrapper');
+  //'isHtml5ParserEnabled', true
+  $pdf->set_option('enable_html5_parser', TRUE);
+
+
+  $pdf->loadHTML(view('project-report', [
+    'title' => 'project',
+    'item' => $project,
+  ])->render());
+
+  return $pdf->stream('file_name.pdf');
+});
 
 Route::get('send-report-card', function (Request $r) {
   $reportCard = StudentReportCard::find($r->id);
@@ -81,7 +98,7 @@ Route::get('send-report-card', function (Request $r) {
   if ($student == null) {
     return "Student not found";
   }
-  $email = $student->email; 
+  $email = $student->email;
   //validate email $email
 
 
@@ -90,13 +107,13 @@ Route::get('send-report-card', function (Request $r) {
       if ($email == null || strlen($email) < 5) {
         return "Email not found";
       }
- 
+
       $rep = $reportCard->send_mail_to_parent();
       die($rep);
     } else if ($task == 'sms') {
 
       $rep = $reportCard->send_sms_to_parent();
-      
+
       /* 
           "current_address" => "Kikumbi"
     "phone_number_1" => null
@@ -130,10 +147,9 @@ Route::get('send-report-card', function (Request $r) {
       die($rep);
     } else {
       return "Task not found";
-
     }
   } catch (\Throwable $th) {
-    return "Failed to send email because: " . $th->getMessage()." Email: ".$email; 
+    return "Failed to send email because: " . $th->getMessage() . " Email: " . $email;
   }
 
   dd($email);
@@ -169,10 +185,10 @@ Route::get('termly-report', function (Request $r) {
 Route::get('/', function (Request $request) {
 
   $dashboard = admin_url('dashboard');
-  header("Location: $dashboard"); 
-  die(''); 
-   header("Location: ".url('auth/login')); 
-   die('');
+  header("Location: $dashboard");
+  die('');
+  header("Location: " . url('auth/login'));
+  die('');
   if (isset($_SERVER['HTTP_HOST'])) {
     if (
       $_SERVER['HTTP_HOST'] === 'tusometech.com' ||

@@ -5,7 +5,7 @@ use App\Models\Utils;
     <!--begin::Header-->
     <div class="d-flex justify-content-between px-3 px-md-4 ">
         <h3 class="h3">
-            <b>FEES COLLECTION - {{ count($labels) }} DAYS AGO</b>
+            <b>DAILY EXPENDITURE - {{ count($labels) }} DAYS AGO</b>
         </h3>
         <div>
             <a href="{{ url('/school-fees-payment') }}" class="btn btn-sm btn-primary mt-md-4 mt-4">

@@ -414,7 +414,7 @@ class Dashboard
         $u = Auth::user();
         $term = $u->ent->dpTerm();
         $data = [];
-        $data['title'] = 'Recent payments';
+        $data['title'] = 'Recent Events';
         $data['values'] = [];
         $data['labels'] = [];
         $data['data'] = Transaction::where([
@@ -435,26 +435,14 @@ class Dashboard
 
     public static function recent_fees_bills()
     {
-
-        return;
+ 
         $u = Auth::user();
         $term = $u->ent->dpTerm();
         $data = [];
-        $data['title'] = 'Recent billings';
+        $data['title'] = 'Upcoming Events';
         $data['values'] = [];
         $data['labels'] = [];
-        $data['data'] = Transaction::where([
-            'enterprise_id' => $u->enterprise_id,
-            'term_id' => $term->id,
-        ])
-            ->where(
-                'amount',
-                '<',
-                0
-            )
-            ->orderBy('id', 'desc')
-            ->limit(8)
-            ->get();
+        $data['data'] = [];
         return view('dashboard.recent_fees_bills', $data);
     }
 
@@ -561,9 +549,11 @@ class Dashboard
 
         return view('widgets.box-5', [
             'is_dark' => false,
-            'title' => 'Expected Tution Fees',
-            'sub_title' => 'Total sum of tution fees of the term from all active students.',
-            'number' => "<small>UGX</small>" . number_format(Manifest::get_total_expected_tuition(Auth::user())),
+            'title' => 'Total Budget',
+            'sub_title' => 'All allocated funds.',
+            'number' => "<small>$</small>" . number_format(FinancialRecord::where([
+                'type' => 'BUDGET',
+            ])->sum('amount')),
             'link' => admin_url('transactions')
         ]);
     }
@@ -652,7 +642,7 @@ class Dashboard
         $u = Auth::user();
         $all_students = User::where([
             'enterprise_id' => $u->enterprise_id,
-            'user_type' => 'Student',
+            'user_type' => 'System Users', 
             'status' => 1
         ])->count();
 
@@ -674,12 +664,14 @@ class Dashboard
         $sub_title .= number_format($parents) . ' Parents.';
         return view('widgets.box-5', [
             'is_dark' => false,
-            'title' => 'Students',
-            'sub_title' => $sub_title,
-            'number' => number_format($all_students),
-            'link' => admin_url('students')
+            'title' => 'Employees',
+            'sub_title' => 'All registered users',
+            'number' => number_format(User::where([ 
+                'status' => 1
+            ])->count()),
+            'link' => admin_url('employees')
         ]);
-    }
+    } 
 
     public static function teachers()
     {
@@ -703,10 +695,11 @@ class Dashboard
         $sub_title .= number_format($female_students) . ' Females.';
         return view('widgets.box-5', [
             'is_dark' => false,
-            'title' => 'Teachers & Staff',
+            'title' => 'Ongoing Projects',
             'sub_title' => $sub_title,
-            'number' => number_format($all_students),
-            'link' => admin_url('employees')
+            'number' => number_format(AccountParent::where([ 
+            ])->count()),
+            'link' => admin_url('account-parents')
         ]);
     }
 

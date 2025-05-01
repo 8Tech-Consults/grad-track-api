@@ -94,6 +94,11 @@ class AccountParentController extends AdminController
             return $_add_activitiy . ' ' . $view_activities;
         });
 
+        $grid->column('print', __('Repoert'))
+            ->display(function ($created_at) {
+                $url = url('project-report?id=' . $this->id);
+                return "<a href='{$url}' target='_blank' class='btn btn-sm btn-primary'>Generate Report</a>";
+            });
         return $grid;
     }
 
