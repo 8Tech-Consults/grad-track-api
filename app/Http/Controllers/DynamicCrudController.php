@@ -14,18 +14,38 @@ class DynamicCrudController extends Controller
     /**
      * Dynamically create or update a record in the specified model.
      *
-     * Expected parameters:
-     *   - model=SomeModel (required)  The Eloquent model class in App\Models\
-     *   - id=<id>         (optional)  If present, we update the record with this primary key.
-     *   - is_not_for_company=yes (optional)  If not present, set enterprise_id if that column exists.
-     *   - is_not_for_user=yes    (optional)  If not present, set user or administrator column if they exist.
-     *   - [Other fields...] The data to create or update in the record.
-     *
-     * Usage:
-     *   POST /api/dynamic-save?model=User
-     *     - if no `id` => create a new User record
-     *     - if `id=5` => update User with ID=5
-     *   Additional fields come via JSON body or form data.
+     * @OA\Post(
+     *     path="/api/dynamic-save",
+     *     tags={"Dynamic CRUD"},
+     *     summary="Create or update a record dynamically",
+     *     description="If 'id' is provided, updates the existing record; otherwise creates a new one. Other fields map to model columns.",
+     *     @OA\Parameter(
+     *         name="model",
+     *         in="query",
+     *         required=true,
+     *         description="Eloquent model name to operate on, e.g. 'User'",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="query",
+     *         description="Primary key of record to update (omit to create new)",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="JSON body with key-value pairs for model fields",
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(type="object", @OA\AdditionalProperties(type="string"))
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Record created or updated successfully",
+     *         @OA\JsonContent(type="object", @OA\Property(property="data", type="object"), @OA\Property(property="message", type="string"))
+     *     ),
+     *     @OA\Response(response=400, description="Bad request: missing parameters or save error"),
+     *     @OA\Response(response=401, description="Unauthorized: authentication required")
+     * )
      */
     public function save(Request $request)
     {
@@ -131,27 +151,73 @@ class DynamicCrudController extends Controller
     }
 
 
-
-    /**
-     * Handle dynamic listing of any model's data with filtering, sorting, and pagination.
+  /**
+     * Dynamically list, filter, sort, and paginate records of any model.
      *
-     * Expected Query Params:
-     *  - model=SomeModel           (required) Eloquent model name in App\Models\
-     *  - <field>_like=someValue    (optional) "WHERE <field> LIKE '%someValue%'"
-     *  - <field>_gt=10             (optional) "WHERE <field> > 10"
-     *  - <field>_lt=5              (optional) "WHERE <field> < 5"
-     *  - <field>_gte=10            (optional) "WHERE <field> >= 10"
-     *  - <field>_lte=5             (optional) "WHERE <field> <= 5"
-     *  - <field>=value             (optional) Default "WHERE <field> = value"
-     *  - sort_by=<field>           (optional) Sorting field
-     *  - sort_dir=asc|desc         (optional) Sorting direction
-     *  - page=<num>                (optional) Pagination page
-     *  - per_page=<num>            (optional) Items per page
-     *  - is_not_for_company=yes    (optional) Skip enterprise_id filter
-     *  - is_not_for_user=yes       (optional) Skip user-based filter on user_id or administrator_id
-     *
-     * Usage Example:
-     * GET /api/dynamic-list?model=User&first_name_like=John&sort_by=id&sort_dir=desc
+     * @OA\Get(
+     *     path="/api/dynamic-list",
+     *     tags={"Dynamic CRUD"},
+     *     summary="List or search records dynamically",
+     *     description="Retrieve a paginated list of records for the given model, with optional filters, sorting, and pagination.",
+     *     @OA\Parameter(
+     *         name="model",
+     *         in="query",
+     *         required=true,
+     *         description="Eloquent model name (without namespace) to query, e.g. 'User'",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="<field>_like",
+     *         in="query",
+     *         description="Filter where <field> LIKE %value%",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="<field>_gt",
+     *         in="query",
+     *         description="Filter where <field> > value",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_by",
+     *         in="query",
+     *         description="Column name to sort by",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_dir",
+     *         in="query",
+     *         description="Sort direction: 'asc' or 'desc'",
+     *         @OA\Schema(type="string", enum={"asc","desc"}, default="asc")
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number for pagination",
+     *         @OA\Schema(type="integer", default=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Items per page",
+     *         @OA\Schema(type="integer", default=15)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="items", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="pagination", type="object",
+     *                  @OA\Property(property="current_page", type="integer"),
+     *                  @OA\Property(property="per_page", type="integer"),
+     *                  @OA\Property(property="total", type="integer"),
+     *                  @OA\Property(property="last_page", type="integer")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=400, description="Bad request: missing or invalid parameters"),
+     *     @OA\Response(response=401, description="Unauthorized: authentication required")
+     * )
      */
     public function index(Request $request)
     {
@@ -301,8 +367,36 @@ class DynamicCrudController extends Controller
         // 8) Return success with the data
         return $this->success($responseData, "Data retrieved successfully.");
     }
-
-    //create for delete
+    /**
+     * Delete a record dynamically from the specified model.
+     *
+     * @OA\Post(
+     *     path="/api/dynamic-delete",
+     *     tags={"Dynamic CRUD"},
+     *     summary="Delete a record dynamically",
+     *     description="Deletes the record with the given 'id' from the specified model.",
+     *     @OA\Parameter(
+     *         name="model",
+     *         in="query",
+     *         required=true,
+     *         description="Eloquent model name to delete from, e.g. 'User'",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="query",
+     *         required=true,
+     *         description="Primary key of the record to delete",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response=200, description="Record deleted successfully",
+     *         @OA\JsonContent(type="object", @OA\Property(property="message", type="string"))
+     *     ),
+     *     @OA\Response(response=400, description="Bad request: missing 'id' parameter"),
+     *     @OA\Response(response=401, description="Unauthorized: authentication required"),
+     *     @OA\Response(response=404, description="Not found: record does not exist")
+     * )
+     */
     public function delete(Request $request)
     {
         // 1) Check authentication

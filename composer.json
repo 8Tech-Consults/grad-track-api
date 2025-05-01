@@ -10,7 +10,6 @@
     "require": {
         "php": "^7.3|^8.0",
         "barryvdh/laravel-dompdf": "^2.0",
-        "binarytorch/larecipe": "^2.5",
         "darkaonline/l5-swagger": "8.6",
         "doctrine/annotations": "^1.14",
         "encore/laravel-admin": "1.*",

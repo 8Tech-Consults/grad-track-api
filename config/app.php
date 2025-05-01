@@ -197,6 +197,7 @@ return [
         Maatwebsite\Excel\ExcelServiceProvider::class,
         Tymon\JWTAuth\Providers\LaravelServiceProvider::class,
         Milon\Barcode\BarcodeServiceProvider::class,
+        L5Swagger\L5SwaggerServiceProvider::class,
 
     ],
 

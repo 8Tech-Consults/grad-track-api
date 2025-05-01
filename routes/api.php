@@ -31,7 +31,7 @@ Route::get("user-manifest", [ApiMainController::class, 'manifest']);
 
 Route::middleware([JwtMiddleware::class])->group(function () {
 
-    Route::get('/dynamic-save', [DynamicCrudController::class, 'index']);
+    Route::get('/dynamic-list', [DynamicCrudController::class, 'index']);
     Route::post('/dynamic-save', [DynamicCrudController::class, 'save']);
     Route::post('/dynamic-delete', [DynamicCrudController::class, 'delete']);
 
