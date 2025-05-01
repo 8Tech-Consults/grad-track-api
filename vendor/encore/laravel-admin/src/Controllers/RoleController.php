@@ -44,7 +44,7 @@ class RoleController extends AdminController
 
         $grid->tools(function (Grid\Tools $tools) {
             $tools->batch(function (Grid\Tools\BatchActions $actions) {
-                $actions->disableDelete();
+                // $actions->disableDelete();
             });
         });
 
