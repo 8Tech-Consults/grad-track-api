@@ -164,7 +164,7 @@ class AccountController extends AdminController
         });
 
         $grid->column('description', __('Description'))
-            ->limit(50);
+            ->hide();
 
         return $grid;
     }
