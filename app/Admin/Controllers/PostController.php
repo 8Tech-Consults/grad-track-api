@@ -173,7 +173,7 @@ class PostController extends AdminController
         $form->hidden('type', __('Type'))->default($type);
 
         $form->radio('target', __('Target'))
-            ->options(['All' => 'All', 'Students' => 'Students', 'Parents' => 'Parents', 'Teachers' => 'Teachers', 'Non-Teaching' => 'Non-Teaching Staff',])
+            ->options(['All' => 'All', 'Students' => 'Students', 'Teachers' => 'Teachers',])
             ->default('All');
         $form->radio('status', __('Status'))->options(['Draft' => 'Draft', 'Published' => 'Published'])->rules('required');
         if ($type == 'Event') {

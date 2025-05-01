@@ -1,6 +1,6 @@
 {
-    "name": "Tusome System",
-    "short_name": "Tusome",
+    "name": "Ruforum System",
+    "short_name": "Ruforum",
     "description": "Eliminate your school administrative headaches. - Smoothly manage admissions, academics, finance, communication, and more.",
     "version": "1.0.0",
     "start_url": "/",
@@ -20,16 +20,9 @@
             "type": "image/png"
         }
     ],
-    "author": "Tusome Development Team",
-    "permissions": [
-        "internet",
-        "notifications"
-    ],
-    "categories": [
-        "education",
-        "management",
-        "productivity"
-    ],
+    "author": "Ruforum Development Team",
+    "permissions": ["internet", "notifications"],
+    "categories": ["education", "management", "productivity"],
     "lang": "en",
     "orientation": "portrait"
 }

@@ -11,6 +11,8 @@ Route::group([
     'as'            => config('admin.route.prefix') . '.',
 ], function (Router $router) {
 
+    $router->resource('partners', ClientController::class);
+    $router->get('/calendar', 'HomeController@calendar')->name('calendar');
     $router->resource('employees-batch-importers', EmployeesBatchImporterController::class);
     $router->resource('employees', EmployeesController::class);
     $router->resource('not-active-employees', EmployeesController::class);

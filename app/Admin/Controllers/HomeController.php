@@ -47,11 +47,36 @@ class HomeController extends Controller
     }
 
 
+    public function calendar(Content $content)
+    {
+        $u = Auth::user();
+        $content
+            ->title('Company Calendar');
+        $content->row(function (Row $row) {
+            $row->column(8, function (Column $column) {
+                $column->append(view('dashboard.calender', [
+                    'events' => []
+                ]));
+            });
+            $row->column(4, function (Column $column) {
+                $u = Admin::user();
+                $column->append(view('dashboard.upcoming-events', [
+                    'items' => []
+                ]));
+            });
+        });
+        return $content;
+
+
+        return $content;
+    }
+
+
     public function stats(Content $content)
     {
 
         $u = Admin::user();
-        
+
 
         //$warnings = Utils::get_system_warnings($u->ent);
 

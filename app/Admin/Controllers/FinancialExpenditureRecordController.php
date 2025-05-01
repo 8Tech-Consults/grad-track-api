@@ -33,6 +33,9 @@ class FinancialExpenditureRecordController extends AdminController
      */
     protected function grid()
     {
+
+
+
         $grid = new Grid(new FinancialRecord());
 
         $grid->export(function ($export) {
@@ -44,17 +47,16 @@ class FinancialExpenditureRecordController extends AdminController
         $grid->disableBatchActions();
         $terms = [];
         $active_term = 0;
-        foreach (Term::where(
-            'enterprise_id',
-            Admin::user()->enterprise_id
-        )->orderBy('id', 'desc')->get() as $key => $term) {
+        foreach (
+            Term::where(
+                'enterprise_id',
+                Admin::user()->enterprise_id
+            )->orderBy('id', 'desc')->get() as $key => $term
+        ) {
             $terms[$term->id] = "Term " . $term->name . " - " . $term->academic_year->name;
             if ($term->is_active) {
                 $active_term = $term->id;
             }
-        }
-        if (!isset($_GET['term_id'])) {
-            $grid->model()->where('term_id', $active_term);
         }
 
 
@@ -63,11 +65,10 @@ class FinancialExpenditureRecordController extends AdminController
             $filter->disableIdFilter();
             $u = Admin::user();
             $accs = [];
-            foreach (Account::where([
-                'enterprise_id' => $u->enterprise_id,
-                'type' => 'OTHER_ACCOUNT'
-            ])
-                ->get() as $val) {
+            foreach (
+                Account::where([])
+                    ->get() as $val
+            ) {
                 if ($val->account_parent_id == null) {
                     continue;
                 }
@@ -78,11 +79,13 @@ class FinancialExpenditureRecordController extends AdminController
 
 
 
-            foreach (AccountParent::where([
-                'enterprise_id' => $u->enterprise_id
-            ])
-                ->orderBy('id', 'desc')
-                ->get() as $v) {
+            foreach (
+                AccountParent::where([
+                    'enterprise_id' => $u->enterprise_id
+                ])
+                    ->orderBy('id', 'desc')
+                    ->get() as $v
+            ) {
                 $parents[$v->id] = $v->name;
             }
 
@@ -90,19 +93,20 @@ class FinancialExpenditureRecordController extends AdminController
             $filter->equal('parent_account_id', 'Filter by Vote')
                 ->select($parents);
 
-            $filter->equal('account_id', 'Filter by account')
+            $filter->equal('account_id', 'Filter by activity')
                 ->select($accs);
 
-            foreach (Term::where(
-                'enterprise_id',
-                Admin::user()->enterprise_id
-            )->orderBy('id', 'desc')->get() as $key => $term) {
+            foreach (
+                Term::where(
+                    'enterprise_id',
+                    Admin::user()->enterprise_id
+                )->orderBy('id', 'desc')->get() as $key => $term
+            ) {
                 $terms[$term->id] = "Term " . $term->name . " - " . $term->academic_year->name;
                 if ($term->is_active) {
                     $active_term = $term->id;
                 }
             }
-            $filter->equal('term_id', 'Fliter by term')->select($terms); 
 
 
             $filter->between('payment_date', 'Date Created between')->date();
@@ -114,11 +118,10 @@ class FinancialExpenditureRecordController extends AdminController
             });
         });
 
-        $grid->quickSearch('description');
+        $grid->quickSearch('description')->placeholder('Search by description');
 
 
         $grid->model()->where([
-            'enterprise_id' => Admin::user()->enterprise_id,
             'type' => 'EXPENDITURE',
 
         ])->orderBy('id', 'DESC');
@@ -139,19 +142,20 @@ class FinancialExpenditureRecordController extends AdminController
             ->display(function ($x) {
                 return '<spap title="' . $x . '" >' . Str::limit($x, 40, '...') . '</span>';
             });
+        $grid->column('detail', __('Details'))->hide();
         $grid->column('quantity', __('Quantity'))
             ->display(function ($x) {
-                return number_format($x);
-            });
-        $grid->column('unit_price', __('Unit price (UGX)'))
-            ->display(function ($x) {
-                return number_format($x);
-            });
-        $grid->column('amount', __('Total (UGX)'))
-            ->display(function ($x) {
-                return number_format($x);
-            })->sortable()->totalRow(function ($x) {
                 return  number_format($x);
+            });
+        $grid->column('unit_price', __('Unit price ($)'))
+            ->display(function ($x) {
+                return '$' . number_format($x);
+            });
+        $grid->column('amount', __('Total ($)'))
+            ->display(function ($x) {
+                return '$' . number_format($x);
+            })->sortable()->totalRow(function ($x) {
+                return  '$' . number_format($x);
             });
 
         $grid->column('type', __('Type'))
@@ -166,7 +170,7 @@ class FinancialExpenditureRecordController extends AdminController
             ->hide();
 
 
-        $grid->column('account_id', __('Account'))
+        $grid->column('account_id', __('Activity'))
             ->display(function ($x) {
                 if ($this->account == null) {
                     return $x;
@@ -175,19 +179,12 @@ class FinancialExpenditureRecordController extends AdminController
             })->sortable();
 
 
-        $grid->column('parent_account_id', __('Vote'))
+        $grid->column('parent_account_id', __('Project'))
             ->display(function ($x) {
                 if ($this->par == null) {
                     return $x;
                 }
-                return $this->par->name;
-            })->sortable();
-        $grid->column('term_id', __('Term'))
-            ->display(function ($x) {
-                if ($this->term == null) {
-                    return $x;
-                }
-                return $this->term->name_text;
+                return $this->par->short_name;
             })->sortable();
 
         $grid->column('created_by_id', __('Created by'))
@@ -244,6 +241,10 @@ class FinancialExpenditureRecordController extends AdminController
         if ($form->isCreating()) {
             $form->hidden('created_by_id', __('Enterprise id'))->default($u->id)->rules('required');
         }
+        $account_id = null;
+        if (isset($_GET['account_id'])) {
+            $account_id = $_GET['account_id'];
+        }
 
         $form->text('type', __('Record Type'))
             ->value('EXPENDITURE')
@@ -252,13 +253,7 @@ class FinancialExpenditureRecordController extends AdminController
         $type = 'Expenditure ';
 
         $term = $u->ent->active_term();
-        $form->select('term_id', "Due term")
-            ->options(Term::where([
-                'enterprise_id' => $u->enterprise_id
-            ])
-                ->orderBy('id', 'desc')
-                ->get()
-                ->pluck('name_text', 'id'))
+        $form->hidden('term_id', "Due term")
             ->default($term->id)
             ->rules('required');
         $form->date('payment_date', __('Due Date'))->default(date('Y-m-d'))->rules('required');
@@ -274,20 +269,17 @@ class FinancialExpenditureRecordController extends AdminController
         $ajax_url = trim($ajax_url);
 
         $accs = [];
-        foreach (Account::where([
-            'enterprise_id' => $u->enterprise_id,
-            'type' => 'OTHER_ACCOUNT'
-        ])
-            ->get() as $val) {
-            if ($val->account_parent_id == null) {
-                continue;
-            }
+        foreach (
+            Account::where([])
+                ->get() as $val
+        ) {
 
             $accs[$val->id] = $val->getName();
         }
 
 
-        $form->select('account_id', "Account")
+        $form->select('account_id', "Actitivity")
+            ->default($account_id)
             ->options($accs)->rules('required');
 
 

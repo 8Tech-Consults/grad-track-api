@@ -14,19 +14,17 @@ class Account extends Model
     use HasFactory;
 
 
-    public function getBudget($term)
+    public function getBudget($term = null)
     {
         return FinancialRecord::where([
-            'term_id' => $term->id,
             'account_id' => $this->id,
             'type' => 'BUDGET',
         ])->sum('amount');
     }
 
-    public function getExpenditure($term)
+    public function getExpenditure()
     {
         return FinancialRecord::where([
-            'term_id' => $term->id,
             'account_id' => $this->id,
             'type' => 'EXPENDITURE',
         ])->sum('amount');
@@ -86,106 +84,6 @@ class Account extends Model
             $m->transfer_keyword = null;
             $m->save();
         }
-    }
-    public static function boot()
-    {
-        parent::boot();
-        self::updated(function ($m) {
-            Account::doTransfer($m);
-        });
-        self::updated(function ($m) {
-            Account::doTransfer($m);
-        });
-        self::updating(function ($m) {
-            return false;
-            if (isset($m->new_balance)) {
-                if ($m->new_balance == 1) {
-                    if (isset($m->new_balance_amount)) {
-                        $new_balance = ((int)($m->new_balance_amount));
-                        $current_balance = $m->balance();
-                        $trans_amount = $new_balance - $current_balance;
-
-                        $ent = Enterprise::find($m->enterprise_id);
-
-                        $trans = new Transaction();
-                        $trans->enterprise_id = $m->enterprise_id;
-                        $trans->account_id = $m->id;
-                        $trans->amount = $trans_amount;
-                        if ($trans_amount < 0) {
-                            $trans->description = "Credited UGX $trans_amount to meet the correct balance.";
-                        } else {
-                            $trans->description = "Credited UGX $trans_amount to meet the correct balance.";
-                        }
-
-                        $term = $ent->active_term();
-                        $trans->academic_year_id = $term->academic_year_id;
-                        $trans->term_id = $term->id;
-                        $trans->school_pay_transporter_id = "";
-
-                        $created_by = Admin::user();
-                        if ($created_by == null) {
-                            $created_by = auth('api')->user();
-                        }
-                        if ($created_by == null) {
-                            throw new Exception("Logged in user not found.", 1);
-                        }
-                        $trans->created_by_id = $created_by->id;
-
-                        $trans->is_contra_entry = false;
-                        $bank = Enterprise::main_bank_account($ent);
-                        $trans->type = 'FEES_PAYMENT';
-                        $trans->contra_entry_account_id = $bank->id;
-                        $trans->contra_entry_transaction_id = 0;
-                        $today = Carbon::now();
-                        $trans->payment_date = $today->toDateTimeString();
-                        $trans->save();
-                    }
-                }
-            }
-
-
-            if (isset($m->new_balance)) {
-                unset($m->new_balance);
-            }
-            if (isset($m->new_balance_amount)) {
-                unset($m->new_balance_amount);
-            }
-
-            return $m;
-            //new_balance
-        });
-        self::creating(function ($m) {
-            return false;
-            $u = Administrator::find($m->administrator_id);
-            if ($u == null) {
-                return false;
-            }
-            //die("Creatoing.... {$m->administrator_id}");
-            if ($m->type == 'CASH_ACCOUNT') {
-                $cash_acc = Account::where([
-                    'type' => 'CASH_ACCOUNT',
-                    'enterprise_id' => $m->enterprise_id,
-                ])->first();
-                if ($cash_acc != null) {
-                    return false;
-                }
-            }
-            if ($m->type == 'FEES_ACCOUNT') {
-                $acc = Account::where([
-                    'type' => 'FEES_ACCOUNT',
-                    'enterprise_id' => $m->enterprise_id,
-                ])->first();
-                if ($acc != null) {
-                    return false;
-                }
-            }
-            self::deleting(function ($m) {
-                Transaction::where('account_id', $m->id)
-                    ->orWhere('contra_entry_account_id', $m->id)
-                    ->orWhere('contra_entry_transaction_id', $m->id)
-                    ->delete();
-            });
-        });
     }
 
     public static function create($administrator_id)

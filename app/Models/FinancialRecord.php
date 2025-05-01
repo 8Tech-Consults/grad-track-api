@@ -42,17 +42,9 @@ class FinancialRecord extends Model
                     throw new Exception("Type not found.", 1);
                 }
             }
-            $t = Term::find($m->term_id);
-            if ($t == null) {
-                $ent = Enterprise::find($t->enterprise_id);
-                $t = $ent->active_term();
-            }
-            if ($t == null) {
-                throw new Exception("Term  not found.", 1);
-            }
 
-            $m->academic_year_id = $t->academic_year_id;
-            $m->term_id = $t->id;
+            $m->academic_year_id = 1;
+            $m->term_id = 1;
             $acc = Account::find($m->account_id);
             if ($acc == null) {
                 throw new Exception("Account  not found.", 1);
@@ -75,9 +67,6 @@ class FinancialRecord extends Model
                 }
             }
 
-            if ($m->created_by_id == null) {
-                $m->created_by_id = $ent->administrator_id;
-            }
 
             return $m;
         });
@@ -91,17 +80,10 @@ class FinancialRecord extends Model
                     throw new Exception("Type not found.", 1);
                 }
             }
-            $t = Term::find($m->term_id);
-            if ($t == null) {
-                $ent = Enterprise::find($t->enterprise_id);
-                $t = $ent->active_term();
-            }
-            if ($t == null) {
-                throw new Exception("Term  not found.", 1);
-            }
 
-            $m->academic_year_id = $t->academic_year_id;
-            $m->term_id = $t->id;
+
+            $m->academic_year_id = 1;
+            $m->term_id = 1;
             $acc = Account::find($m->account_id);
             if ($acc == null) {
                 throw new Exception("Account  not found.", 1);

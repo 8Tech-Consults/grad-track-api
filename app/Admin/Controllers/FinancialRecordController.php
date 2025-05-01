@@ -42,17 +42,19 @@ class FinancialRecordController extends AdminController
         });
 
         $grid->disableBatchActions();
- 
+
         $grid->filter(function ($filter) {
             // Remove the default id filter
             $filter->disableIdFilter();
             $u = Admin::user();
             $accs = [];
-            foreach (Account::where([
-                'enterprise_id' => $u->enterprise_id,
-                'type' => 'OTHER_ACCOUNT'
-            ])
-                ->get() as $val) {
+            foreach (
+                Account::where([
+                    'enterprise_id' => $u->enterprise_id,
+                    'type' => 'OTHER_ACCOUNT'
+                ])
+                    ->get() as $val
+            ) {
                 if ($val->account_parent_id == null) {
                     continue;
                 }
@@ -68,11 +70,13 @@ class FinancialRecordController extends AdminController
                 $type = 'Expenditure';
             }
 
-            foreach (AccountParent::where([
-                'enterprise_id' => $u->enterprise_id
-            ])
-                ->orderBy('id', 'desc')
-                ->get() as $v) {
+            foreach (
+                AccountParent::where([
+                    'enterprise_id' => $u->enterprise_id
+                ])
+                    ->orderBy('id', 'desc')
+                    ->get() as $v
+            ) {
                 $parents[$v->id] = $v->name;
             }
 
@@ -216,6 +220,11 @@ class FinancialRecordController extends AdminController
     {
         $form = new Form(new FinancialRecord());
         $u = Auth::user();
+        $account_id = null;
+        if (isset($_GET['account_id'])) {
+            $account_id = $_GET['account_id'];
+        }
+
         $form->hidden('enterprise_id', __('Enterprise id'))->default($u->enterprise_id)->rules('required');
         if ($form->isCreating()) {
             $form->hidden('created_by_id', __('Enterprise id'))->default($u->id)->rules('required');
@@ -260,11 +269,13 @@ class FinancialRecordController extends AdminController
         $ajax_url = trim($ajax_url);
 
         $accs = [];
-        foreach (Account::where([
-            'enterprise_id' => $u->enterprise_id,
-            'type' => 'OTHER_ACCOUNT'
-        ])
-            ->get() as $val) {
+        foreach (
+            Account::where([
+                'enterprise_id' => $u->enterprise_id,
+                'type' => 'OTHER_ACCOUNT'
+            ])
+                ->get() as $val
+        ) {
             if ($val->account_parent_id == null) {
                 continue;
             }

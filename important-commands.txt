@@ -1,0 +1,9 @@
+php artisan migrate
+
+php artisan make:migration create_courses_table
+
+php artisan make:migration add_administrator_id_to_account_parents --table=account_parents
+ 
+php artisan admin:make TargetController --model=App\\Models\\Target
+ 
+php artisan make:model Target -m

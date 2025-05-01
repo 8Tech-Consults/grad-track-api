@@ -13,8 +13,10 @@ use Encore\Admin\Facades\Admin;
 use Encore\Admin\Form;
 use Encore\Admin\Grid;
 use Encore\Admin\Show;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class FinancialBudgetRecordController extends AdminController
@@ -35,29 +37,32 @@ class FinancialBudgetRecordController extends AdminController
     {
         $grid = new Grid(new FinancialRecord());
 
+
+
+
+        /*     
+    "enterprise_id" => 7
+    "account_id" => 865
+    "academic_year_id" => 2
+    "term_id" => 6
+    "parent_account_id" => 1
+    "created_by_id" => 2985
+    "amount" => -350000
+    "termly_school_fees_balancing_id" => null
+    "description" => "Cartridge refill"
+    "type" => "EXPENDITURE"
+    "payment_date" => "2022-10-19"
+    "quantity" => 1
+    "unit_price" => 1 */
+
+
         $grid->export(function ($export) {
             $export->filename('Financial Records');
             $export->except(['actions']);
             $export->originalValue(['description', 'type']);
         });
 
-        $terms = [];
-        $active_term = 0;
-        foreach (
-            Term::where(
-                'enterprise_id',
-                Admin::user()->enterprise_id
-            )->orderBy('id', 'desc')->get() as $key => $term
-        ) {
-            $terms[$term->id] = "Term " . $term->name . " - " . $term->academic_year->name;
-            if ($term->is_active) {
-                $active_term = $term->id;
-            }
-        }
-        $grid->disableBatchActions();
-        if (!isset($_GET['term_id'])) {
-            $grid->model()->where('term_id', $active_term);
-        }
+
 
 
 
@@ -67,10 +72,7 @@ class FinancialBudgetRecordController extends AdminController
             $u = Admin::user();
             $accs = [];
             foreach (
-                Account::where([
-                    'enterprise_id' => $u->enterprise_id,
-                    'type' => 'OTHER_ACCOUNT'
-                ])
+                Account::where([])
                     ->get() as $val
             ) {
                 if ($val->account_parent_id == null) {
@@ -94,22 +96,13 @@ class FinancialBudgetRecordController extends AdminController
             }
 
 
-            $filter->equal('parent_account_id', 'Filter by vote')
+            $filter->equal('parent_account_id', 'Filter by project')
                 ->select($parents);
 
-            $filter->equal('account_id', 'Filter by account')
+            $filter->equal('account_id', 'Filter by activity')
                 ->select($accs);
 
 
-            foreach (
-                Term::where(
-                    'enterprise_id',
-                    Admin::user()->enterprise_id
-                )->orderBy('id', 'desc')->get() as $key => $term
-            ) {
-                $terms[$term->id] = "Term " . $term->name . " - " . $term->academic_year->name;
-            }
-            $filter->equal('term_id', 'Fliter by term')->select($terms);
 
 
             $filter->between('payment_date', 'Date Created between')->date();
@@ -125,9 +118,8 @@ class FinancialBudgetRecordController extends AdminController
 
 
         $grid->model()->where([
-            'enterprise_id' => Admin::user()->enterprise_id,
             'type' => 'BUDGET',
-        ])->orderBy('id', 'DESC');
+        ])->orderBy('id', 'asc');
 
         $grid->column('created_at', __('Created'))
             ->display(function ($x) {
@@ -144,20 +136,19 @@ class FinancialBudgetRecordController extends AdminController
         $grid->column('description', __('Particulars'))
             ->display(function ($x) {
                 return '<spap title="' . $x . '" >' . Str::limit($x, 40, '...') . '</span>';
-            });
+            })->sortable();
+        $grid->column('detail', __('Details'))->hide();
         $grid->column('quantity', __('Quantity'))
             ->display(function ($x) {
-                return number_format($x);
-            });
-        $grid->column('unit_price', __('Unit price (UGX)'))
-            ->display(function ($x) {
-                return number_format($x);
-            });
-        $grid->column('amount', __('Total (UGX)'))
-            ->display(function ($x) {
-                return number_format($x);
-            })->sortable()->totalRow(function ($x) {
                 return  number_format($x);
+            });
+        $grid->column('unit_price', __('Unit price ($)'))
+            ->display(function ($x) {
+                return '$' . number_format($x);
+            });
+        $grid->column('amount', __('Total ($)'))
+            ->display(function ($x) {
+                return '$' . number_format($x);
             });
         $grid->column('type', __('Type'))
             ->dot([
@@ -171,7 +162,7 @@ class FinancialBudgetRecordController extends AdminController
             ->hide();
 
 
-        $grid->column('account_id', __('Account'))
+        $grid->column('account_id', __('Activity'))
             ->display(function ($x) {
                 if ($this->account == null) {
                     return $x;
@@ -180,20 +171,14 @@ class FinancialBudgetRecordController extends AdminController
             })->sortable();
 
 
-        $grid->column('parent_account_id', __('Vote'))
+        $grid->column('parent_account_id', __('Project'))
             ->display(function ($x) {
                 if ($this->par == null) {
                     return $x;
                 }
-                return $this->par->name;
+                return $this->par->short_name;
             })->sortable();
-        $grid->column('term_id', __('Term'))
-            ->display(function ($x) {
-                if ($this->term == null) {
-                    return $x;
-                }
-                return $this->term->name_text;
-            })->sortable();
+
 
         $grid->column('created_by_id', __('Created by'))
             ->display(function ($x) {
@@ -256,15 +241,8 @@ class FinancialBudgetRecordController extends AdminController
             ->rules('required');
 
         $term = $u->ent->active_term();
-        $form->select('term_id', "Due term")
-            ->options(Term::where([
-                'enterprise_id' => $u->enterprise_id
-            ])
-                ->orderBy('id', 'desc')
-                ->get()
-                ->pluck('name_text', 'id'))
-            ->default($term->id)
-            ->rules('required');
+        $form->hidden('academic_year_id', __('Academic year id'))->default(1);
+        $form->hidden('term_id', __('Academic year id'))->default(1);
         $form->date('payment_date', __('Due Date'))->default(date('Y-m-d'))->rules('required');
         $form->divider();
 
@@ -279,21 +257,21 @@ class FinancialBudgetRecordController extends AdminController
 
         $accs = [];
         foreach (
-            Account::where([
-                'enterprise_id' => $u->enterprise_id,
-                'type' => 'OTHER_ACCOUNT'
-            ])
+            Account::where([])
                 ->get() as $val
         ) {
-            if ($val->account_parent_id == null) {
-                continue;
-            }
 
             $accs[$val->id] = $val->getName();
         }
 
+        $account_id = null;
+        if (isset($_GET['account_id'])) {
+            $account_id = $_GET['account_id'];
+        }
 
-        $form->select('account_id', "Account")
+
+        $form->select('account_id', "Activity")
+            ->default($account_id)
             ->options($accs)->rules('required');
 
 
@@ -303,7 +281,10 @@ class FinancialBudgetRecordController extends AdminController
         //$form->number('created_by_id', __('Created by id'));
         //$form->number('termly_school_fees_balancing_id', __('Termly school fees balancing id'));
 
-        $form->text('description', __('Particulars'));
+
+        $form->text('description', __('Particulars'))->required()
+            ->rules('required');
+        $form->textarea('detail', __('Details'));
         $form->decimal('quantity', __('Quantity'))
             ->rules('required');
         $form->decimal('unit_price', __('Unit price'))->rules('required');

@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\DB;
 class Dashboard
 {
 
+
     public static function bursarServices()
     {
         $u = Auth::user();
@@ -38,16 +39,20 @@ class Dashboard
         $amounts = [];
         $total = 0;
 
-        foreach (ServiceCategory::where([
-            'enterprise_id' => $u->enterprise_id
-        ])->orderBy('id', 'Asc')->get() as $key => $value) {
+        foreach (
+            ServiceCategory::where([
+                'enterprise_id' => $u->enterprise_id
+            ])->orderBy('id', 'Asc')->get() as $key => $value
+        ) {
             $value->amount = 0;
             if ($value->name == 'Others') {
                 continue;
             }
-            foreach (Service::where([
-                'service_category_id' => $value->id
-            ])->get() as $s) {
+            foreach (
+                Service::where([
+                    'service_category_id' => $value->id
+                ])->get() as $s
+            ) {
                 $value->amount = ServiceSubscription::where([
                     'service_id' => $value->id
                 ])->sum('total');
@@ -120,10 +125,12 @@ class Dashboard
             $academic_year_id = $active_academic_year->id;
         }
 
-        foreach (AcademicClass::where([
-            'enterprise_id' => $u->enterprise_id,
-            'academic_year_id' => $academic_year_id
-        ])->orderBy('id', 'Asc')->get() as $key => $value) {
+        foreach (
+            AcademicClass::where([
+                'enterprise_id' => $u->enterprise_id,
+                'academic_year_id' => $academic_year_id
+            ])->orderBy('id', 'Asc')->get() as $key => $value
+        ) {
             $value->amount = AcademicClassFee::where([
                 'academic_class_id' => $value->id
             ])->sum('amount');
@@ -188,9 +195,11 @@ class Dashboard
         $accounts = [];
         $amounts = [];
         $total = 0;
-        foreach (AccountParent::where([
-            'enterprise_id' => $u->enterprise_id,
-        ])->get() as $key => $acc) {
+        foreach (
+            AccountParent::where([
+                'enterprise_id' => $u->enterprise_id,
+            ])->get() as $key => $acc
+        ) {
             $acc->total = $acc->getSum($year);
             $labels[] = $acc->name;
             $accounts[] = $acc;
@@ -223,10 +232,12 @@ class Dashboard
             $academic_year_id = $active_academic_year->id;
         }
 
-        foreach (AcademicClass::where([
-            'enterprise_id' => $u->enterprise_id,
-            'academic_year_id' => $academic_year_id,
-        ])->orderBy('id', 'Asc')->get() as $key => $value) {
+        foreach (
+            AcademicClass::where([
+                'enterprise_id' => $u->enterprise_id,
+                'academic_year_id' => $academic_year_id,
+            ])->orderBy('id', 'Asc')->get() as $key => $value
+        ) {
             $value->amount = Account::where([
                 'academic_class_id' => $value->id
             ])->sum('balance');
@@ -425,6 +436,7 @@ class Dashboard
     public static function recent_fees_bills()
     {
 
+        return;
         $u = Auth::user();
         $term = $u->ent->dpTerm();
         $data = [];
@@ -458,9 +470,11 @@ class Dashboard
         $data['values'] = [];
         $data['labels'] = [];
         $data['data'] = [];
-        foreach (AccountParent::where([
-            'enterprise_id' => $u->enterprise_id,
-        ])->get() as $key => $parent) {
+        foreach (
+            AccountParent::where([
+                'enterprise_id' => $u->enterprise_id,
+            ])->get() as $key => $parent
+        ) {
             $tot = $parent->getBudget($term);
             if ($tot < 1) {
                 continue;

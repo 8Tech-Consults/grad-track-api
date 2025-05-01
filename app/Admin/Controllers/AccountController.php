@@ -25,7 +25,7 @@ class AccountController extends AdminController
      *
      * @var string
      */
-    protected $title = 'Financial Accounts';
+    protected $title = 'Project Activities';
     /**
      * Make a grid builder.
      *
@@ -35,9 +35,8 @@ class AccountController extends AdminController
     {
 
 
-
-
         $grid = new Grid(new Account());
+        $grid->disableBatchActions();
 
         $grid->batchActions(function ($batch) {
             $batch->disableDelete();
@@ -47,11 +46,7 @@ class AccountController extends AdminController
 
 
         $grid->model()
-            ->orderBy('id', 'Desc')
-            ->where([
-                'enterprise_id' => Admin::user()->enterprise_id,
-                /*   'type' => 'STUDENT_ACCOUNT' */
-            ]);
+            ->orderBy('id', 'Asc');
 
 
 
@@ -61,23 +56,12 @@ class AccountController extends AdminController
 
 
 
-            $filter->equal('account_parent_id', 'Filter by account category')
+            $filter->equal('account_parent_id', 'Filter by Project')
                 ->select(
                     AccountParent::where([
                         'enterprise_id' => Admin::user()->enterprise_id,
                     ])->orderBy('name', 'Asc')->get()->pluck('name', 'id')
                 );
-
-            /*             $filter->equal('type', 'Account type')->select(
-                [
-                    'STUDENT_ACCOUNT' => 'Students\' accounts',
-                    'EMPLOYEE_ACCOUNT' => 'Employees\' accounts',
-                    'BANK_ACCOUNT' => 'Bank accounts',
-                    'CASH_ACCOUNT' => 'Cash accounts',
-                ]
-            );
-
-            */
 
 
             $filter->group('balance', function ($group) {
@@ -100,51 +84,51 @@ class AccountController extends AdminController
             'enterprise_id' => Admin::user()->enterprise_id,
             'administrator_id' => $ent->administrator_id,
         ])
-            ->orderBy('id', 'Desc');
+            ->orderBy('id', 'Asc');
 
         $grid->quickSearch('name')->placeholder('Search by account name');
-        $grid->column('id', __('#ID'));
+        $grid->column('id', __('#ID'))
+            ->sortable();
 
         $grid->column('owner.avatar', __('Photo'))
             ->width(80)
             ->hide()
             ->lightbox(['width' => 60, 'height' => 60]);
 
-        $grid->column('name', __('Account'))->sortable();
-        $grid->column('account_parent_id', __('Vote'))
+        $grid->column('name', __('Activity'))->sortable();
+        $grid->column('account_parent_id', __('Project'))
             ->display(function () {
                 $acc =  Utils::getObject(AccountParent::class, $this->account_parent_id);
                 if ($acc == null) {
                     return "None";
                 }
-                return $acc->name;
+                return $acc->short_name;
             })
             ->sortable();
 
-        /*  
-            $grid->column('name', __('Account Name'))
-            ->link()
-            ->sortable(); 
-        */
 
-
-
-
-        $grid->column('budget', __('Budget (UGX)'))->display(function () {
-            $term = Auth::user()->ent->dpTerm();
-            return  number_format($this->getBudget($term));
+        $grid->column('budget', __('Budget ($)'))->display(function () {
+            $val =  '$' . number_format($this->getBudget());
+            $text = '<a 
+            target="_blank"
+            title="Click to view these budgets"
+            href="' . admin_url('financial-records-budget?account_id=' . $this->id) . '" class=" text-dark text-bold m-0">' . $val . '</a>';
+            return  $text;
         })->sortable();
 
         $grid->column('expense', __('Expense'))->display(function () {
-            $term = Auth::user()->ent->dpTerm();
-            return  number_format($this->getExpenditure($term));
+            $val =  '$' . number_format($this->getExpenditure());
+            $text = '<a 
+            target="_blank"
+            title="Click to view these expenses"
+            href="' . admin_url('financial-records-expenditure?account_id=' . $this->id) . '" class=" text-dark text-bold m-0">' . $val . '</a>';
+            return  $text;
         })->sortable();
 
 
-        $grid->column('balance', __('Balance'))->display(function () {
-            $term = Auth::user()->ent->dpTerm();
-            $bud = $this->getBudget($term);
-            $exp = $this->getExpenditure($term);
+        $grid->column('balance', __('Balance'))->display(function ($bud) {
+            $exp = $this->getExpenditure();
+            $bud = $this->getBudget();
             $bal = $bud + $exp;
             $color = "green";
             if ($bal < 0) {
@@ -172,7 +156,14 @@ class AccountController extends AdminController
         });
 
 
+        $grid->column('quick_actions', __('Quick Actions'))->width(200)->display(function () {
+            $_add_activitiy = '<a target="_blank" href="' . admin_url('financial-records-budget/create?account_id=' . $this->id) . '" class="btn btn-xs btn-primary m-0">Allocate Funds</a>';
+            $view_activities = '<a target="_blank" href="' . admin_url('financial-records-expenditure/create?account_id=' . $this->id) . '" class="btn btn-xs btn-primary m-0">Add Expense</a>';
+            return $_add_activitiy . ' ' . $view_activities;
+        });
 
+        $grid->column('description', __('Description'))
+            ->limit(50);
 
         return $grid;
     }
@@ -211,74 +202,12 @@ class AccountController extends AdminController
         $balance = 0;
         $id = 0;
 
-        if ($form->isEditing()) {
-
-            $params = request()->route()->parameters();
-            if (isset($params['account'])) {
-                $id =  $params['account'];
-            }
-
-            $u = $form->model()->find($id);
-
-            if ($u == null) {
-                die("Model not found.");
-            }
 
 
-            foreach ($u->transactions as $key => $v) {
-                if ($v->amount < 0) {
-                    $payable += $v->amount;
-                } else {
-                    $paid += $v->amount;
-                }
-            }
-            $balance = $payable + $paid;
-
-            $form->display('name', __('Account name'));
-            $form->display('payable', __('Total payable fees'))
-                ->default("UGX " . number_format($payable));
-
-            $form->display('paid', __('Total paid fees'))
-                ->default("UGX " . number_format($paid));
-
-            $form->display('paid', __('FEES BALANCE'))
-                ->default("UGX " . number_format($balance));
-            $form->divider();
+        $account_parent_id = null;
+        if (isset($_GET['account_parent_id'])) {
+            $account_parent_id = $_GET['account_parent_id'];
         }
-
-        if (!$form->isEditing()) {
-            $form->saving(function ($f) {
-                $type = $f->type;
-                $u = Admin::user();
-                $enterprise_id = $u->enterprise_id;
-                $administrator_id = 0;
-                $ent =  Enterprise::find($enterprise_id);
-                if ($ent == null) {
-                    die("Enterprise not found.");
-                }
-                $enterprise_owner_id = $ent->administrator_id;
-                $administrator_id = $ent->administrator_id;
-
-                if ($administrator_id < 1) {
-                    $error = new MessageBag([
-                        'title'   => 'Error',
-                        'message' => "Account ower ID was not found.",
-                    ]);
-                    return back()->with(compact('error'));
-                }
-
-
-
-                $f->administrator_id = $administrator_id;
-                return $f;
-                /*  $success = new MessageBag([
-                'title'   => 'title...',
-                'message' => "Good to go!",
-            ]);
-            return back()->with(compact('success')); */
-            });
-        }
-
 
         $u = Admin::user();
         $ent = Enterprise::find($u->enterprise_id);
@@ -286,15 +215,16 @@ class AccountController extends AdminController
         $form->hidden('administrator_id', __('Enterprise id'))->default($ent->administrator_id)->rules('required');
 
 
-        $form->text('name', __('Account Name'))
+        $form->text('name', __('Activit Title'))
             ->rules('required');
 
-        $form->select('account_parent_id', "Department")
+        $form->select('account_parent_id', "Project")
             ->options(
                 AccountParent::where([
                     'enterprise_id' => Admin::user()->enterprise_id
                 ])->orderBy('name', 'Asc')->get()->pluck('name', 'id')
             )
+            ->default($account_parent_id)
             ->rules('required');
         if ($form->isEditing()) {
             $form->radio('status', "Account verification")
@@ -319,7 +249,7 @@ class AccountController extends AdminController
                 ->rules('required');
         }
 
-        if ($form->isEditing()) {
+        /*      if ($form->isEditing()) {
             $form->radio('category', "Account type")
                 ->options(Utils::account_categories())
                 ->readonly()
@@ -334,17 +264,9 @@ class AccountController extends AdminController
                 ->readonly()
                 ->rules('required');
         }
+ */
 
 
-        $form->radio('transfer_keyword', "Do you want to transfer trannsactions to this account?")
-            ->options([
-                1 => 'Yes',
-                0 => 'No',
-            ])->when(1, function ($f) {
-                $f->text('want_to_transfer', "Transfer keyword")
-                    ->rules('required')
-                    ->help("Any transaction containing mentioned keyword in its description should be transfered to this account.");
-            })->rules('required');
 
         $form->textarea('description', __('Account description'));
 
@@ -371,9 +293,7 @@ class AccountController extends AdminController
 
 
 
-        $form->disableCreatingCheck();
-        $form->disableEditingCheck();
-        $form->disableReset();
+
         $form->disableViewCheck();
 
         return $form;

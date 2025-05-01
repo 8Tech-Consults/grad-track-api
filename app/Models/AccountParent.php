@@ -20,6 +20,31 @@ class AccountParent extends Model
         });
     }
 
+
+    public function getOtherClientsAttribute($value)
+    {
+        if ($value == null) {
+            return [];
+        }
+        if (strlen($value) < 1) {
+            return [];
+        }
+        try {
+            //$value = explode(',', $value);
+        } catch (\Exception $e) {
+            $value = [];
+        }
+        return $value;
+    }
+
+    public function setOtherClientsAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['other_clients'] = implode(',', $value);
+        }
+    }
+
+
     public function accounts()
     {
         return $this->hasMany(Account::class);
@@ -28,7 +53,6 @@ class AccountParent extends Model
     public function getBudget($term)
     {
         return FinancialRecord::where([
-            'term_id' => $term->id,
             'parent_account_id' => $this->id,
             'type' => 'BUDGET',
         ])->sum('amount');
@@ -37,12 +61,11 @@ class AccountParent extends Model
     public function getExpenditure($term)
     {
         return FinancialRecord::where([
-            'term_id' => $term->id,
             'parent_account_id' => $this->id,
             'type' => 'EXPENDITURE',
         ])->sum('amount');
     }
-     
+
     public function getSum($year)
     {
 
@@ -50,9 +73,11 @@ class AccountParent extends Model
         // $accs = "SELECT id FROM accounts WHERE account_parent_id = $this->id";
         // $sums = "SELECT id FROM accounts WHERE account_parent_id = $this->id";
 
-        foreach (Account::where([
-            'account_parent_id' => $this->id
-        ])->get() as $key => $acc) {
+        foreach (
+            Account::where([
+                'account_parent_id' => $this->id
+            ])->get() as $key => $acc
+        ) {
             $tot += Transaction::where([
                 'account_id' => $acc->id,
                 /* 'is_contra_entry' => 0, */
