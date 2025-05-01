@@ -11,6 +11,8 @@
         "php": "^7.3|^8.0",
         "barryvdh/laravel-dompdf": "^2.0",
         "binarytorch/larecipe": "^2.5",
+        "darkaonline/l5-swagger": "8.6",
+        "doctrine/annotations": "^1.14",
         "encore/laravel-admin": "1.*",
         "fruitcake/laravel-cors": "^3.0",
         "goldspecdigital/laravel-eloquent-uuid": "^8.0",
@@ -24,9 +26,9 @@
         "laravelcollective/html": "^6.2",
         "maatwebsite/excel": "^3.1.48",
         "milon/barcode": "^11.0",
-        "spatie/laravel-image-optimizer": "^1.6",
-        "stefangabos/zebra_image": "dev-master",
-        "tymon/jwt-auth": "^1.0"
+        "spatie/laravel-image-optimizer": "^1.6", 
+        "tymon/jwt-auth": "^1.0",
+        "zircote/swagger-php": "4.11"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.7",

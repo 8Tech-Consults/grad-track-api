@@ -167,6 +167,10 @@ Route::get('termly-report', function (Request $r) {
 });
 
 Route::get('/', function (Request $request) {
+
+  $dashboard = admin_url('dashboard');
+  header("Location: $dashboard"); 
+  die(''); 
    header("Location: ".url('auth/login')); 
    die('');
   if (isset($_SERVER['HTTP_HOST'])) {

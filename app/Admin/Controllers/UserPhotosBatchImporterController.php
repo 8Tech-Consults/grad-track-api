@@ -14,8 +14,7 @@ use Encore\Admin\Facades\Admin;
 use Encore\Admin\Form;
 use Encore\Admin\Grid;
 use Encore\Admin\Show;
-use Maatwebsite\Excel\Facades\Excel;
-use Zebra_Image;
+use Maatwebsite\Excel\Facades\Excel; 
 
 use function PHPUnit\Framework\fileExists;
 
@@ -224,35 +223,7 @@ class UserPhotosBatchImporterController extends AdminController
             $path = Utils::docs_root() . "temp/{$class}_thumb";
             $files = scandir($path, 0);
             $x = 0;
-            foreach ($files as $f) {
-                $ext = pathinfo($f, PATHINFO_EXTENSION);
-                if ($ext != 'jpg') {
-                    continue;
-                } 
- 
-
-                    $image = new Zebra_Image();
-                    $image->handle_exif_orientation_tag = false;
-                    $image->preserve_aspect_ratio = true;
-                    $image->enlarge_smaller_images = true;
-                    $image->preserve_time = true;
-                    $image->jpeg_quality = 80;
-                    $id = ((string)(str_replace('.jpg', '', $f)));
-
-                    $image->auto_handle_exif_orientation = true;
-                    $image->source_path =  $path . "/" . $f;
-                    $image->target_path =  Utils::docs_root() .  "temp/{$class}/" . $f;
-                    if (!$image->resize(413, 531, ZEBRA_IMAGE_CROP_CENTER)) {
-                        // if no errors
-                        dd("failed");
-                    }
-  
-
-                    echo $x.'<img src="' . url('temp/' . $class . "_thumb/" . $f) . '" width="300" />';
-                    echo '<img src="' . url(url("temp/{$class}/" . $f)) . '" width="300"/><hr>';
-              
-                $x++;
-            }
+            
 
             dd("compressing...");
         }

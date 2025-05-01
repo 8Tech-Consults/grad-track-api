@@ -2,13 +2,13 @@
     <img src="https://larecipe.saleem.dev/images/logo.svg"/>
 </h6>
 
-<h2 align="center">
+<h1 align="center">
     LaRecipe
-</h2>
+</h1>
 
 
 <h6 align="center">
-    Write gorgeous documentations for your products using Markdown inside your Laravel app.
+    Write gorgeous documentation for your products using Markdown inside your Laravel app.
 </h6>
     
 
@@ -19,11 +19,14 @@
 <a href="https://github.com/saleem-hadad/larecipe"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
  <a href="#sponsors" alt="Sponsors on Open Collective"><img src="https://opencollective.com/larecipe/sponsors/badge.svg" /></a> 
 </p>
-<br/>
 
-# LaRecipe 🍪
+---
 
-**LaRecipe** is simply a code-driven package provides an easy way to create beautiful documentation for your product or application inside your Laravel app.
+
+**LaRecipe** is simply a code-driven package that provides an easy way to create beautiful documentation for your product or application inside your Laravel app. 
+> We are working on dotnet version as well. Check it out [LaRecipe Dotnet](https://github.com/larecipe/larecipe-dotnet)
+
+Follow me on [LinkedIn](https://www.linkedin.com/in/saleem-hadad/) for updates and the latest news.
 
 ![LaRecipe Screenshot](https://larecipe.saleem.dev/images/screenshot.png#)
 
@@ -66,12 +69,8 @@ Get $200 DigitalOcean Credit
 - [LaRecipe Feedback](https://larecipe.saleem.dev/packages/binarytorch/larecipe-feedback)
 - [LaRecipe Swagger](https://larecipe.saleem.dev/packages/binarytorch/larecipe-swagger)
 
-## Used by
-
-* [Zino](https://zino.binarytorch.com.my/1.0/installation) - 🤖 Custom Arduino library made for humans.
-* [Blogged](https://blogged.binarytorch.com.my/docs/1.0/overview) - Blogged is a package provides an easy way to create beautiful blog inside your Laravel projects.
-* [WooSignal](https://woosignal.com/docs/api/1.0/overview) - Fastest WooCommerce
-App Templates.
+## Used by 
+* [WooSignal](https://woosignal.com/docs/api/1.0/overview) - Fastest WooCommerce App Templates.
 * [AddChat](https://addchat-docs.classiebit.com/docs/1.0/introduction) - All-in-one multi-purpose Chat Widget For Laravel & Codeigniter websites.
 * [RoadLeagues](https://roadleagues.com/docs/1.0/overview) - A cycling league management system with an API to allow data distrubution externally.
 * [Raileo](https://raileo.com/docs/1.0/overview) - Raileo helps you to monitor your website's uptime, performance and SEO

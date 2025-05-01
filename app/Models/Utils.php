@@ -17,8 +17,7 @@ use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
 use Milon\Barcode\DNS1D;
-use Milon\Barcode\DNS2D;
-use Zebra_Image;
+use Milon\Barcode\DNS2D; 
 
 define('STATUS_NOT_ACTIVE', 0);
 define('STATUS_ACTIVE', 1);
@@ -815,54 +814,10 @@ class Utils  extends Model
 
     public static function create_thumbnail($file_path)
     {
+        return null;
         if (!file_exists($file_path)) {
             return null;
-        }
-
-        $ext = pathinfo($file_path, PATHINFO_EXTENSION);
-        if ($ext == null) {
-            return null;
-        }
-        $ext = strtolower($ext);
-
-        if (!in_array($ext, [
-            'jpg',
-            'jpeg',
-            'png',
-            'gif',
-        ])) {
-            return null;
-        }
-        $file_name_1 = basename($file_path);
-        //$file_name_2 = 'temp_' . $file_name_1;
-        $file_name_2 = $file_name_1;
-
-
-        $image = new Zebra_Image();
-        $image->handle_exif_orientation_tag = false;
-        $image->preserve_aspect_ratio = true;
-        $image->enlarge_smaller_images = true;
-        $image->preserve_time = true;
-        $image->jpeg_quality = 30;
-        //$file_path size
-        $file_path_size = filesize($file_path);
-        //to mb
-        $file_path_size = $file_path_size / 1024 / 1024;
-        if ($file_path_size > .5) {
-            $image->jpeg_quality = 10;
-        }
-
-        $file_path_2 = str_replace($file_name_1, $file_name_2, $file_path);
-
-
-        $image->auto_handle_exif_orientation = true;
-        $image->source_path =  $file_path;
-        $image->target_path =  $file_path_2;
-        //if (!$image->resize(413, 531, ZEBRA_IMAGE_CROP_CENTER)) {
-        if (!$image->resize(0, 0, ZEBRA_IMAGE_CROP_CENTER)) {
-            return null;
-        }
-        return $file_path_2;
+        } 
     }
     public static function rectify_terms_forItransactions($u)
     {

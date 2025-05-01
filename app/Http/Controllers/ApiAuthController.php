@@ -19,9 +19,38 @@ class ApiAuthController extends Controller
     use ApiResponser;
 
     /**
-     * Get a JWT via given credentials.
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * @OA\Get(
+     *     path="/api/auth/me",
+     *     tags={"Authentication"},
+     *     summary="Get the authenticated user's details",
+     *     description="Returns the details of the currently authenticated user.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="johndoe@example.com"),
+     *                 @OA\Property(property="roles_text", type="string", example="['admin', 'user']"),
+     *                 @OA\Property(property="token", type="string", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Profile details")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="User not found.")
+     *         )
+     *     )
+     * )
      */
     public function me()
     {
@@ -48,8 +77,7 @@ class ApiAuthController extends Controller
         if ($r->password == null) {
             return $this->error('Password is required.');
         }
-
-        $r->username = trim($r->username);
+ 
 
         $u = User::where('phone_number_1', $r->username)
             ->orWhere('username', $r->username)

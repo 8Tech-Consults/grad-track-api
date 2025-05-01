@@ -292,9 +292,7 @@ class NotActiveStudentsController extends AdminController
         $grid->column('emergency_person_name', __('Guardian'))
             ->hide()
             ->sortable();
-        $grid->column('emergency_person_phone', __('Guardian Phone'))->hide()->sortable();C
-
-
+        $grid->column('emergency_person_phone', __('Guardian Phone'))->hide()->sortable();
         $grid->column('phone_number_1', __('Phone number'))->hide();
         $grid->column('phone_number_2', __('Phone number 2'))->hide();
         $grid->column('email', __('Email'))->hide();

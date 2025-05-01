@@ -215,7 +215,7 @@ abstract class AbstractRouteCollection implements Countable, IteratorAggregate, 
 
             $this->add($route);
         } elseif (! is_null($symfonyRoutes->get($name))) {
-            throw new LogicException("Unable to prepare route [{$route->uri}] for serialization. Another route has already been assigned name [{$name}].");
+            //throw new LogicException("Unable to prepare route [{$route->uri}] for serialization. Another route has already been assigned name [{$name}].");
         }
 
         $symfonyRoutes->add($route->getName(), $route->toSymfonyRoute());
